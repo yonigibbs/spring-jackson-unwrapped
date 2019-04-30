@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static com.yg.springjacksonunwrapped.Utils.getUserSavedItem;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
@@ -23,26 +22,41 @@ public class SpringJacksonUnwrappedApplicationTests {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    @Test
-    public void nonGenericShouldWork() throws Exception {
-        post(getUserSavedItem(), "nongeneric");
+    public static SavedItem<Integer, ItemInfo<UserBasicInfo, UserExtendedInfo>> getUserSavedItem() {
+        UserBasicInfo basicInfo = new UserBasicInfo();
+        basicInfo.setName("user1");
+        UserExtendedInfo extendedInfo = new UserExtendedInfo();
+        extendedInfo.setRoleName("role1");
+        ItemInfo<UserBasicInfo, UserExtendedInfo> info = new ItemInfo<>();
+        info.setBasicInfo(basicInfo);
+        info.setExtendedInfo(extendedInfo);
+        SavedItem<Integer, ItemInfo<UserBasicInfo, UserExtendedInfo>> savedItem = new SavedItem<>();
+        savedItem.setId(1);
+        savedItem.setInfo(info);
+        return savedItem;
     }
 
+    // This test works
     @Test
-    public void genericSimpleShouldWork() throws Exception {
-        post(getUserSavedItem().getInfo(), "genericsimple");
+    public void unnestedHandledInAbstractClass() throws Exception {
+        post(getUserSavedItem(), "unnested/abstract");
+    }
+
+    // This test works
+    @Test
+    public void nestedHandledInConcreteClass() throws Exception {
+        post(getUserSavedItem().getInfo(), "nested/concrete");
     }
 
     // This is the failing unit test
     @Test
-    public void genericExtendedShouldWork() throws Exception {
-        post(getUserSavedItem(), "genericextended");
+    public void nestedHandledInAbstractClass() throws Exception {
+        post(getUserSavedItem(), "nested/abstract");
     }
 
     private void post(Object object, String urlPart) {
         ResponseEntity<String> response = restTemplate.postForEntity(
                 "http://localhost:" + port + "/users/" + urlPart, object, String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo("OK");
     }
 }
